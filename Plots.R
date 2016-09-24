@@ -8,6 +8,7 @@ library(ggplot2)
 library(lubridate)
 library(xts)
 library(forecast)
+library(qcc)
 
 ###########################################################
 ### Class to model time series analysis
@@ -24,7 +25,9 @@ sd_req_df$tot_days <- as.integer(round((sd_req_df$New.Closed - sd_req_df$New.Cre
 sd_req_2015_df <- subset(sd_req_df, New.Created > '2015-01-01' &
                          New.Created < '2015-12-31')
 sd_req_2016_df <- subset(sd_req_df, New.Created > '2016-01-01')
-
+sd_req_1516_df <- subset(sd_req_df, New.Created > '2015-01-01')
+sd_req_2016_89 <- subset(sd_req_df, New.Created > '2016-08-01')
+#########
 
 ggplot(sd_req_2016_df) +
   aes(x=sd_req_2016_df$New.Created.Day, y=sd_req_2016_df$tot_days) +
@@ -38,22 +41,30 @@ ggplot(sd_req_2016_df) +
   ylab('Total Days Open') +
   ggtitle('Service Desk SRS Tickets January 1 - September 20 2016')
 
+qplot(sd_req_2015_df$tot_days,
+      geom="histogram",
+      binwidth = 10,  
+      main = "Histogram SRS Tickets", 
+      xlab = "SRS Tickets",  
+      fill=I("blue"))
+
 qplot(sd_req_2016_df$tot_days,
       geom="histogram",
-      binwidth = 20,  
+      binwidth = 10,  
       main = "Histogram SRS Tickets", 
       xlab = "SRS Tickets",  
       fill=I("blue"))
 
 ggplot() + 
-  geom_line(data = sd_req_2015_df, 
-            aes(x = New.Created, y = tot_days, color = "red")) +
-  geom_line(data = sd_req_2016_df, 
-            aes(x = New.Created, y = tot_days, color = "blue"))  +
-  geom_vline(xintercept=as.numeric(as.Date("2016-08-30"))) +
+  geom_line(data = sd_req_1516_df, 
+            aes(x=New.Created, y=tot_days)) +
+  geom_vline(xintercept=as.numeric(as.Date("2016-08-30")), color = "red") +
+  geom_hline(yintercept = as.numeric(max(sd_req_2016_89$tot_days, na.rm=TRUE)),  
+                                     color = "green") +
   ggtitle('Total Service Desk Tickets 2015-2016') +
   labs(x="Ticket Create Date",y="Total Days to Close") +
   theme(legend.position='none') 
+
 
 # Need to create a time-series for each variable of concern. Order them by a posix date.
 sd_req_xts <- xts(sd_req_df$tot_days, order.by = sd_req_df$New.Created.Day)
@@ -65,5 +76,4 @@ plot(sd_req_15[,1],major.ticks='months',minor.ticks=FALSE,main=NULL,col=3)
 # 2016
 sd_req_16 <- window(sd_req_xts['2016'])
 plot(sd_req_16[,1],major.ticks='months',minor.ticks=FALSE,main=NULL,col=3)
-
 
